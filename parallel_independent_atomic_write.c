@@ -6,7 +6,6 @@ int test1(){
     srand(SEED);
     real_t *a = (real_t *)malloc(n * sizeof(real_t));
     real_t *b = (real_t *)malloc(n * sizeof(real_t));
-    int c;
 
     for (int x = 0; x < n; ++x){
         a[x] = rand() / (real_t)(RAND_MAX / 10);
@@ -18,18 +17,15 @@ int test1(){
         #pragma acc parallel
         {
 	    #pragma acc loop independent
-            for (int x = 1; x < n; ++x){
-                #pragma acc atomic
-                {
-                    c = a[x] * 2;
-                    b[x] = c;
-                }
+            for (int x = 0; x < n; ++x){
+                #pragma acc atomic write
+                    b[x] = a[x];
             }
         }
     }
 
     for (int x = 0; x < n; ++x){
-        if (fabs(a[x] - a[x]) > PRECISION){
+        if (fabs(a[x] - b[x]) > PRECISION){
             err += 1;
         }
     }
@@ -38,17 +34,18 @@ int test1(){
 }
 #endif
 
+
 int main(){
     int failcode = 0;
     int failed;
 #ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
-    }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    }
+   failed = 0;
+   for (int x = 0; x < NUM_TEST_CALLS; ++x){
+       failed = failed + test1();
+   }
+   if (failed != 0){
+       failcode = failcode + (1 << 0);
+   }
 #endif
     return failcode;
 }
